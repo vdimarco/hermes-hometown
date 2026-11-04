@@ -1,0 +1,13 @@
+{
+  "name": "hometown-arcade",
+  "private": true,
+  "description": "Browser test for the Hometown Arcade Hermes plugin. The plugin itself needs no Node.js.",
+  "license": "MIT",
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -v",
+    "test:browser": "node tests/smoke.e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

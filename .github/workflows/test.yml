@@ -1,0 +1,39 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pyyaml
+      - name: Unit tests (geometry, world, tools, local server)
+        run: python -m unittest discover -s tests -v
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Browser game (desktop and phone)
+        run: node tests/smoke.e2e.mjs
+        env:
+          SHOTS: ${{ github.workspace }}/test-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: test-results
+          if-no-files-found: warn
+          retention-days: 14
