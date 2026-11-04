@@ -744,7 +744,7 @@ function frame(now) {
   }
   idleKey = '';
   frameMs = lerp(frameMs, ms, 0.1);
-  if (frameMs > 45 && quality > 0.5) { quality = Math.max(0.5, quality * 0.85); frameMs = 30; }
+  if (frameMs > 45 && quality > 0.5) { quality = Math.max(0.5, quality * clamp(35 / frameMs, 0.5, 0.9)); frameMs = 30; }
   else if (frameMs < 20 && quality < 1) { quality = Math.min(1, quality * 1.05); frameMs = 18; }
   if (!paused && run && !run.done) {
     acc += dt; let road = null;

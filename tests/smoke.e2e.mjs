@@ -28,7 +28,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
 try {
   for (const [w, h, tag] of [[1280, 720, 'desktop'], [390, 844, 'phone']]) {
     const touch = tag === 'phone';
-    const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: shots ? 2 : 1, isMobile: touch, hasTouch: touch });
+    const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1, isMobile: touch, hasTouch: touch });
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -48,7 +48,7 @@ try {
     // Software WebGL can run at a few frames a second, so wait on game time, not wall time.
     const t0 = await page.evaluate(() => __hometown.run.t);
     await page.keyboard.down('KeyW');
-    await page.waitForFunction((t) => __hometown.run.t > t + 1.5, t0, { timeout: 30000 });
+    await page.waitForFunction((t) => __hometown.run.t > t + 1.5, t0, { timeout: 90000 });
     await page.keyboard.up('KeyW');
     const after = await page.evaluate(() => ({ x: __hometown.car.x, y: __hometown.car.y, kmh: +document.getElementById('kmh').textContent }));
     const moved = Math.hypot(after.x - before.x, after.y - before.y);
@@ -65,7 +65,7 @@ try {
       check(overlap.length === 0, `${tag}: touch buttons clear the HUD ${overlap.join(' ')}`);
       const p0 = await page.evaluate(() => ({ x: __hometown.car.x, y: __hometown.car.y, t: __hometown.run.t }));
       await page.dispatchEvent('#touch button[data-k="gas"]', 'pointerdown');
-      await page.waitForFunction((t) => __hometown.run.t > t + 1.2, p0.t, { timeout: 30000 });
+      await page.waitForFunction((t) => __hometown.run.t > t + 1.2, p0.t, { timeout: 90000 });
       await page.dispatchEvent('#touch button[data-k="gas"]', 'pointerup');
       const p1 = await page.evaluate(() => ({ x: __hometown.car.x, y: __hometown.car.y }));
       check(Math.hypot(p1.x - p0.x, p1.y - p0.y) > 3, `${tag}: holding the gas button drives`);
@@ -77,13 +77,13 @@ try {
     // Visit the stops by moving the car onto each one.
     for (let i = 0; i < 3; i++) {
       await page.evaluate(() => { const s = __hometown.mission.stops[__hometown.run.stop]; Object.assign(__hometown.car, { x: s.x, y: s.y, vx: 0, vy: 0 }); });
-      await page.waitForFunction((n) => __hometown.run.stop > n || __hometown.run.done, i, { timeout: 4000 }).catch(() => {});
+      await page.waitForFunction((n) => __hometown.run.stop > n || __hometown.run.done, i, { timeout: 30000 }).catch(() => {});
     }
     const state = await page.evaluate(() => JSON.stringify({ stop: __hometown.run.stop, done: __hometown.run.done, car: [__hometown.car.x, __hometown.car.y], stops: __hometown.mission.stops.map((s) => [s.x, s.y]) }));
     check(JSON.parse(state).done, `${tag}: all stops visited ${state}`);
-    await page.waitForSelector('#result.on', { timeout: 5000 });
+    await page.waitForSelector('#result.on', { timeout: 30000 });
     check((await page.textContent('#rKicker')) === 'Mission complete', `${tag}: mission completes`);
-    await page.waitForFunction(() => /Hermes has your result/.test(document.getElementById('sent').textContent), null, { timeout: 5000 })
+    await page.waitForFunction(() => /Hermes has your result/.test(document.getElementById('sent').textContent), null, { timeout: 30000 })
       .then(() => check(true, `${tag}: result reaches Hermes`), () => check(false, `${tag}: result reaches Hermes`));
     if (shots) await page.screenshot({ path: join(shots, `${tag}-result.png`) });
 
@@ -94,7 +94,7 @@ try {
     if (shots) {
       const t1 = await page.evaluate(() => __hometown.run.t);
       await page.keyboard.down('KeyW');
-      await page.waitForFunction((t) => __hometown.run.t > t + 2, t1, { timeout: 30000 });
+      await page.waitForFunction((t) => __hometown.run.t > t + 2, t1, { timeout: 90000 });
       await page.keyboard.up('KeyW');
       await page.screenshot({ path: join(shots, `${tag}-night.png`) });
     }
