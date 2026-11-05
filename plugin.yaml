@@ -1,5 +1,5 @@
 name: hometown-arcade
-version: 1.0.0
+version: 1.0.1
 manifest_version: 2
 api_version: 1
 description: "Turn any real address into a drivable 3D browser game built from OpenStreetMap, with missions Hermes writes from the real places nearby and race times the game sends back."

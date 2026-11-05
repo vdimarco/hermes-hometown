@@ -60,9 +60,8 @@ void main(){
   if (k > 7.5 && k < 8.5) { // a crown fades as a whole when the camera is at its tree (vX.yz = tree centre)
     float near = (distance(uCam.xz, vX.yz) - 3.4) / 3.0;
     if (near < 1.0 && hash(floor(gl_FragCoord.xy)) > near) discard;
-  } else if (k > 0.5 && k < 2.5) { // screen-door fade for a wall right next to the camera
-    float near = (distance(uCam, vW) - 2.0) / 2.5;
-    if (near < 1.0 && hash(floor(gl_FragCoord.xy)) > near) discard;
+  } else if (k > 0.5 && k < 2.5 && distance(uCam, vW) < 1.0) { // the chase camera keeps out of buildings; clip only what touches the lens
+    discard;
   }
   if (k > 0.5 && k < 1.5) {
     float h = vX.z, u = vX.y; float fy = fract(h / 3.2), fx = fract(u / 3.1);
