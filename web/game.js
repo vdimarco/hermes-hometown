@@ -669,8 +669,9 @@ function clearBehind(want, fx, fy) { // stop the chase camera before it enters a
   for (let d = 1; d <= want; d += 0.5) if (solidAt(car.x - fx * d, car.y - fy * d)) return Math.max(2.5, d - 1.2);
   return want;
 }
+let quality = 1, frameMs = 16; // render scale, lowered while frames are slow (software WebGL, old phones)
 function resize() {
-  const dpr = Math.min(devicePixelRatio || 1, 2), w = Math.floor(innerWidth * dpr), h = Math.floor(innerHeight * dpr);
+  const dpr = Math.min(devicePixelRatio || 1, 2) * quality, w = Math.floor(innerWidth * dpr), h = Math.floor(innerHeight * dpr);
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
 }
 function draw(time) {
@@ -681,7 +682,8 @@ function draw(time) {
   if (cam.mode === 0) {
     const back = clearBehind(V.cam + speed * 0.12, fx, fy), tx = car.x - fx * back, ty = car.y - fy * back, k = 1 - Math.exp(-6 * (1 / 60));
     cam.x = lerp(cam.x, tx, k * 1.4); cam.y = lerp(cam.y, ty, k * 1.4);
-    if (solidAt(cam.x, cam.y)) { cam.x = tx; cam.y = ty; } // never sit inside a wall, even while easing cam.h = lerp(cam.h, V.camH + speed * 0.05, k);
+    if (solidAt(cam.x, cam.y)) { cam.x = tx; cam.y = ty; } // never sit inside a wall, even while easing
+    cam.h = lerp(cam.h, V.camH + speed * 0.05, k);
     const sh = car.shake * 0.4; eye = [cam.x + (Math.random() - 0.5) * sh, cam.h + (Math.random() - 0.5) * sh, -cam.y];
     at = [car.x + fx * 4, 1.2, -(car.y + fy * 4)];
   } else {
@@ -729,9 +731,21 @@ function draw(time) {
   labels(VP, innerWidth, innerHeight);
 }
 
-let last = performance.now(), acc = 0;
+let last = performance.now(), acc = 0, idleKey = '';
 function frame(now) {
-  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  const ms = now - last, dt = Math.min(0.1, ms / 1000); last = now;
+  if (paused) {
+    // Behind the menu or the results card the scene does not move: draw it once, then rest.
+    const key = innerWidth + 'x' + innerHeight + tod + (mission ? mission.id : '') + (run && run.done);
+    if (key !== idleKey) { idleKey = key; draw(now / 1000); drawMini(); }
+    audio.engine(0, 0, 'none');
+    requestAnimationFrame(frame);
+    return;
+  }
+  idleKey = '';
+  frameMs = lerp(frameMs, ms, 0.1);
+  if (frameMs > 45 && quality > 0.5) { quality = Math.max(0.5, quality * clamp(35 / frameMs, 0.5, 0.9)); frameMs = 30; }
+  else if (frameMs < 20 && quality < 1) { quality = Math.min(1, quality * 1.05); frameMs = 18; }
   if (!paused && run && !run.done) {
     acc += dt; let road = null;
     while (acc > 1 / 120) { road = step(1 / 120); acc -= 1 / 120; }
@@ -749,7 +763,7 @@ function frame(now) {
 /* ---------- boot ---------- */
 $('attrib').textContent = W.attribution + ' · ';
 { const a = document.createElement('a'); a.href = 'https://www.openstreetmap.org/copyright'; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'openstreetmap.org/copyright'; $('attrib').appendChild(a); }
-window.__hometown = { car, keys, cam, get run() { return run; }, get mission() { return mission; }, startMission, startFree, showMenu, blockers: blockers.length, MISSIONS, setTime(t) { if (TIMES[t]) tod = t; } };
+window.__hometown = { car, keys, cam, get quality() { return quality; }, get run() { return run; }, get mission() { return mission; }, startMission, startFree, showMenu, blockers: blockers.length, MISSIONS, setTime(t) { if (TIMES[t]) tod = t; } };
 run = { t: 0, stop: 0, crashes: 0, top: 0, done: false, free: true };
 showMenu();
 const hash = decodeURIComponent(location.hash || '');
